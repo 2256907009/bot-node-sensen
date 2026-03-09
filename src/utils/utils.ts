@@ -42,9 +42,14 @@ export const addUserAgent = (header: AxiosRequestHeaders) => {
   const sdkVersion = version;
   header['User-Agent'] = `BotNodeSDK/v${sdkVersion}`;
 };
-// 添加 User-Agent
+// 添加鉴权信息（旧版固定Token方式）
 export const addAuthorization = (header: AxiosRequestHeaders, appID: string, token: string) => {
   header['Authorization'] = `Bot ${appID}.${token}`;
+};
+
+// 添加鉴权信息（新版AccessToken方式）
+export const addAuthorizationWithAccessToken = (header: AxiosRequestHeaders, accessToken: string) => {
+  header['Authorization'] = `QQBot ${accessToken}`;
 };
 // 组装完整Url
 export const buildUrl = (path = '', isSandbox?: boolean) => {

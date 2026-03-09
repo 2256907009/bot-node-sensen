@@ -14,6 +14,7 @@ import WebSocket, { EventEmitter } from 'ws';
 import { toObject } from '@src/utils/utils';
 import { Properties } from '@src/utils/constants';
 import { BotLogger } from '@src/utils/logger';
+import { getTokenManager } from '@src/utils/token-manager';
 
 // websocket连接
 export class Ws {
@@ -158,13 +159,26 @@ export class Ws {
 
   // 鉴权
   authWs() {
-    // 鉴权参数
+    // 判断使用哪种鉴权方式
+    if (this.config.appSecret) {
+      // 新版AccessToken鉴权
+      this.authWsWithAccessToken();
+    } else if (this.config.token) {
+      // 旧版固定Token鉴权（已弃用）
+      this.authWsWithToken();
+    } else {
+      BotLogger.info('[CLIENT] 鉴权失败：请提供appSecret（推荐）或token');
+    }
+  }
+
+  // 使用固定Token鉴权（旧版，已弃用）
+  authWsWithToken() {
     const authOp = {
-      op: OpCode.IDENTIFY, // 鉴权参数
+      op: OpCode.IDENTIFY,
       d: {
-        token: `Bot ${this.config.appID}.${this.config.token}`, // 根据配置转换token
-        intents: this.getValidIntents(), // todo 接受的类型
-        shard: this.checkShards(this.config.shards) || [0, 1], // 分片信息,给一个默认值
+        token: `Bot ${this.config.appID}.${this.config.token}`,
+        intents: this.getValidIntents(),
+        shard: this.checkShards(this.config.shards) || [0, 1],
         properties: {
           $os: Properties.os,
           $browser: Properties.browser,
@@ -172,8 +186,36 @@ export class Ws {
         },
       },
     };
-    // 发送鉴权请求
     this.sendWs(authOp);
+  }
+
+  // 使用AccessToken鉴权（新版）
+  async authWsWithAccessToken() {
+    const tokenManager = getTokenManager();
+    if (!tokenManager) {
+      BotLogger.info('[CLIENT] TokenManager未初始化');
+      return;
+    }
+
+    try {
+      const accessToken = await tokenManager.getToken();
+      const authOp = {
+        op: OpCode.IDENTIFY,
+        d: {
+          token: `QQBot ${accessToken}`, // 使用QQBot前缀
+          intents: this.getValidIntents(),
+          shard: this.checkShards(this.config.shards) || [0, 1],
+          properties: {
+            $os: Properties.os,
+            $browser: Properties.browser,
+            $device: Properties.device,
+          },
+        },
+      };
+      this.sendWs(authOp);
+    } catch (error) {
+      BotLogger.info('[CLIENT] 获取AccessToken失败:', error);
+    }
   }
 
   // 校验intents类型
@@ -251,15 +293,45 @@ export class Ws {
 
   // 重新重连Ws
   reconnectWs() {
-    const reconnectParam = {
-      op: OpCode.RESUME,
-      d: {
-        token: `Bot ${this.config.appID}.${this.config.token}`,
-        session_id: this.sessionRecord.sessionID,
-        seq: this.sessionRecord.seq,
-      },
-    };
-    this.sendWs(reconnectParam);
+    if (this.config.appSecret) {
+      // 新版AccessToken鉴权
+      this.reconnectWsWithAccessToken();
+    } else {
+      // 旧版固定Token鉴权
+      const reconnectParam = {
+        op: OpCode.RESUME,
+        d: {
+          token: `Bot ${this.config.appID}.${this.config.token}`,
+          session_id: this.sessionRecord.sessionID,
+          seq: this.sessionRecord.seq,
+        },
+      };
+      this.sendWs(reconnectParam);
+    }
+  }
+
+  // 使用AccessToken重连
+  async reconnectWsWithAccessToken() {
+    const tokenManager = getTokenManager();
+    if (!tokenManager) {
+      BotLogger.info('[CLIENT] TokenManager未初始化');
+      return;
+    }
+
+    try {
+      const accessToken = await tokenManager.getToken();
+      const reconnectParam = {
+        op: OpCode.RESUME,
+        d: {
+          token: `QQBot ${accessToken}`,
+          session_id: this.sessionRecord.sessionID,
+          seq: this.sessionRecord.seq,
+        },
+      };
+      this.sendWs(reconnectParam);
+    } catch (error) {
+      BotLogger.info('[CLIENT] 重连获取AccessToken失败:', error);
+    }
   }
 
   // OpenAPI事件分发

@@ -3,11 +3,13 @@ import { versionMapping } from '@src/openapi/openapi';
 import { APIVersion, Config } from './types/openapi';
 import { GetWsParam } from '@src/types';
 import WebsocketClient from './client/client';
+import { initTokenManager, TokenManager } from '@src/utils/token-manager';
 
 // 注册v1接口
 v1Setup();
 
 let defaultImpl = versionMapping[apiVersion] as typeof OpenAPI;
+let tokenManager: TokenManager | null = null;
 
 // SelectOpenAPIVersion 指定使用哪个版本的 api 实现，如果不指定，sdk将默认使用第一个 setup 的 api 实现
 export function selectOpenAPIVersion(version: APIVersion) {
@@ -16,11 +18,27 @@ export function selectOpenAPIVersion(version: APIVersion) {
   }
   defaultImpl = versionMapping[version];
 }
+
 // 如果需要使用其他版本的实现，需要在调用这个方法之前调用 SelectOpenAPIVersion 方法
 export function createOpenAPI(config: Config) {
+  // 如果使用appSecret，初始化TokenManager
+  if (config.appSecret && !tokenManager) {
+    tokenManager = initTokenManager({
+      appID: config.appID,
+      appSecret: config.appSecret,
+    });
+  }
   return defaultImpl.newClient(config);
 }
+
 // ws连接新建
 export function createWebsocket(config: GetWsParam) {
+  // 如果使用appSecret，初始化TokenManager
+  if (config.appSecret && !tokenManager) {
+    tokenManager = initTokenManager({
+      appID: config.appID,
+      appSecret: config.appSecret,
+    });
+  }
   return new WebsocketClient(config);
 }

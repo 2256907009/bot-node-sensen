@@ -10,6 +10,11 @@ module.exports = {
   plugins: ['jest'],
   env: {
     jest: true,
+    node:true,
+    es6:true
+  },
+  globals:{
+    NodeJS:true
   },
   rules: {
     '@typescript-eslint/indent': 'off',

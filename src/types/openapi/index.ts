@@ -20,7 +20,8 @@ export type OpenAPIRequest = <T extends Record<any, any> = any>(options: Request
 
 export interface Config {
   appID: string;
-  token: string;
+  token?: string; // 旧版固定token（已弃用）
+  appSecret?: string; // 新版使用appSecret获取AccessToken
   sandbox?: boolean;
 }
 

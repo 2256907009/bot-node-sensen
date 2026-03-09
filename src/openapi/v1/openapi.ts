@@ -17,7 +17,8 @@ import Announce from './announce';
 import Schedule from './schedule';
 import GuildPermissions from './guild-permissions';
 import Interaction from './interaction';
-import { addUserAgent, addAuthorization, buildUrl } from '@src/utils/utils';
+import { addUserAgent, addAuthorization, addAuthorizationWithAccessToken, buildUrl } from '@src/utils/utils';
+import { getTokenManager } from '@src/utils/token-manager';
 import {
   GuildAPI,
   ChannelAPI,
@@ -91,14 +92,13 @@ export class OpenAPI implements IOpenAPI {
   }
   // 基础rest请求
   public request<T extends Record<any, any> = any>(options: RequestOptions): Promise<RestyResponse<T>> {
-    const { appID, token } = this.config;
+    const { appID, token, appSecret } = this.config;
 
     options.headers = { ...options.headers };
 
     // 添加 UA
     addUserAgent(options.headers);
-    // 添加鉴权信息
-    addAuthorization(options.headers, appID, token);
+
     // 组装完整Url
     const botUrl = buildUrl(options.url, this.config.sandbox);
 
@@ -123,8 +123,26 @@ export class OpenAPI implements IOpenAPI {
       },
     );
 
-    const client = resty.create(options);
-    return client.request<T>(botUrl!, options);
+    // 判断使用哪种鉴权方式
+    if (appSecret) {
+      // 新版AccessToken鉴权
+      const tokenManager = getTokenManager();
+      if (!tokenManager) {
+        return Promise.reject(new Error('TokenManager未初始化，请先调用createOpenAPI'));
+      }
+      return tokenManager.getToken().then((accessToken) => {
+        addAuthorizationWithAccessToken(options.headers!, accessToken);
+        const client = resty.create(options);
+        return client.request<T>(botUrl!, options);
+      });
+    } else if (token) {
+      // 旧版固定Token鉴权（已弃用）
+      addAuthorization(options.headers, appID, token);
+      const client = resty.create(options);
+      return client.request<T>(botUrl!, options);
+    } else {
+      return Promise.reject(new Error('请提供appSecret（推荐）或token进行鉴权'));
+    }
   }
 }
 

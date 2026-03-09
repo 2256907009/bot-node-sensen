@@ -29,7 +29,8 @@ export interface EventTypes {
 // 请求得到ws地址的参数
 export interface GetWsParam {
   appID: string;
-  token: string;
+  token?: string; // 旧版固定token（已弃用）
+  appSecret?: string; // 新版使用appSecret获取AccessToken
   sandbox?: boolean;
   shards?: Array<number>;
   intents?: Array<AvailableIntentsEventsEnum>;
