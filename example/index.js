@@ -7,7 +7,7 @@ import { createOpenAPI, createWebsocket } from 'qq-guild-bot';
 //现在实现全新写小说全球online
 const testConfigWs = {
   appID: '102823737',
-  appSecret: 'KYm1HXo5NfyHbvGcyLi6UtIi8Z1TwPtN', // 使用appSecret进行OAuth2鉴权
+  appSecret: 'W1X3a7fDmLvV6hJvYBpT8nT9qXFyhRBw', // 使用appSecret进行OAuth2鉴权 （这个测试环境一半只有一天的时效性）
   intents: [
     'GUILDS',                    // 需要调用 频道基础事件
     'GUILD_MEMBERS',             // 成员事件
