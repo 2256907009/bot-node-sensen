@@ -29,6 +29,8 @@
     "format": "prettier --write ./src",
     "test": "jest --config jest.config.json",
     "example": "cd example && npm run dev",
+    "setup": "npm install && npm run build && cd example && npm install",
+    "start": "cd example && node index.js",
     "publish:npm": "node scripts/publish.js",
     "gc": "git-cz",
     "gen": "node scripts/gen/index.js",
@@ -84,7 +86,6 @@
   },
   "dependencies": {
     "loglevel": "^1.8.0",
-    "qq-guild-bot": "^2.9.5",
     "resty-client": "0.0.5",
     "ws": "^7.4.4"
   },
