@@ -1,12 +1,22 @@
 // 以下仅为用法示意，详情请参照文档：https://bot.q.qq.com/wiki/develop/nodesdk/
+import 'dotenv/config'; // 自动加载 .env 文件到 process.env
 import { createOpenAPI, createWebsocket } from 'qq-guild-bot';
+
+const appID = process.env.AppID;
+const appSecret = process.env.AppSecret;
+
+if (!appID || !appSecret) {
+  console.error('❌ 请在 example/.env 文件中配置 AppID 和 AppSecret');
+  process.exit(1);
+}
+
 // =====================================================
 // 新版鉴权配置（推荐）- 使用 appSecret 获取 AccessToken
 // =====================================================
 //现在实现全新写小说全球online
 const testConfigWs = {
-  appID: process.env.AppID,
-  appSecret: process.env.AppSecret, // 使用appSecret进行OAuth2鉴权 （这个测试环境一半只有一天的时效性）
+  appID,
+  appSecret, // 使用appSecret进行OAuth2鉴权
   intents: [
     'GUILDS',                    // 需要调用 频道基础事件
     'GUILD_MEMBERS',             // 成员事件
